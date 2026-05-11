@@ -27,93 +27,80 @@ STEP-5: Combine all these groups to get the complete cipher text.
 
 ## PROGRAM 
 ```
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-#include <stdio.h> 
-#include <string.h> 
-#include <ctype.h> 
-int keymat[3][3] = { 
-{ 17, 17, 5 }, 
-{ 21, 18, 21 }, 
-{ 2, 2, 19 } 
-}; 
-int invkeymat[3][3] = { 
-{ 4, 9, 15 }, 
-{ 15, 17, 6 }, 
-{ 24, 0, 17 } 
-}; 
-char key[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; 
-void encode(char *ret, char a, char b, char c) { 
-int x, y, z; 
-int posa = (int)a - 65; 
-int posb = (int)b - 65; 
-int posc = (int)c - 65; 
-x = posa * keymat[0][0] + posb * keymat[1][0] + posc * keymat[2][0]; 
-y = posa * keymat[0][1] + posb * keymat[1][1] + posc * keymat[2][1]; 
-z = posa * keymat[0][2] + posb * keymat[1][2] + posc * keymat[2][2]; 
-ret[0] = key[x % 26]; 
-ret[1] = key[y % 26]; 
-ret[2] = key[z % 26]; 
-ret[3] = '\0'; 
-} 
-void decode(char *ret, char a, char b, char c) { 
-int x, y, z; 
-int posa = (int)a - 65; 
-int posb = (int)b - 65; 
-int posc = (int)c - 65; 
-x = posa * invkeymat[0][0] + posb * invkeymat[1][0] + posc * invkeymat[2][0]; 
-y = posa * invkeymat[0][1] + posb * invkeymat[1][1] + posc * invkeymat[2][1]; 
-z = posa * invkeymat[0][2] + posb * invkeymat[1][2] + posc * invkeymat[2][2]; 
-ret[0] = key[(x % 26 < 0) ? (26 + x % 26) : (x % 26)]; 
-ret[1] = key[(y % 26 < 0) ? (26 + y % 26) : (y % 26)]; 
-ret[2] = key[(z % 26 < 0) ? (26 + z % 26) : (z % 26)]; 
-ret[3] = '\0'; 
-} 
- 
-int main() { 
-    char msg[1000]; 
-    char enc[1000] = ""; 
-    char dec[1000] = ""; 
-    int n; 
-     
-    printf("Enter text:"); 
-    scanf("%s",msg); 
-    printf("Simulation of Hill Cipher\n"); 
-     
-     
-    for (int i = 0; i < strlen(msg); i++) { 
-        msg[i] = toupper(msg[i]); 
-    } 
-     
-    n = strlen(msg) % 3; 
-    if (n != 0) { 
-        for (int i = 1; i <= (3 - n); i++) { 
-            strcat(msg, "X"); 
-        } 
-    } 
-     
-    printf("Padded message : %s\n", msg); 
-     
-    for (int i = 0; i < strlen(msg); i += 3) { 
-char temp[4]; 
-encode(temp, msg[i], msg[i + 1], msg[i + 2]); 
-strcat(enc, temp); 
-} 
-printf("Encoded message : %s\n", enc); 
-for (int i = 0; i < strlen(enc); i += 3) { 
-char temp[4]; 
-decode(temp, enc[i], enc[i + 1], enc[i + 2]); 
-strcat(dec, temp); 
-} 
-printf("Decoded message : %s\n", dec); 
-return 0; 
+int main() {
+    char text[1000];
+    int key[3][3];
+    char processed[1010];
+    char cipher[1010];
+    int len, padded_len;
+
+    // Input plaintext
+    printf("Enter plaintext: ");
+    fgets(text, sizeof(text), stdin);
+    // Remove newline and convert to uppercase
+    len = strlen(text);
+    if (text[len-1] == '\n') text[--len] = '\0';
+    for (int i = 0; i < len; i++) text[i] = toupper(text[i]);
+
+    // Input 3x3 key matrix
+    printf("Enter 3x3 key matrix:\n");
+    for (int i = 0; i < 3; i++) {
+        scanf("%d %d %d", &key[i][0], &key[i][1], &key[i][2]);
+    }
+
+    // Print key matrix
+    printf("\nKey Matrix:\n");
+    for (int i = 0; i < 3; i++) {
+        printf("[%d, %d, %d]\n", key[i][0], key[i][1], key[i][2]);
+    }
+
+    // Copy text to processed and pad with 'X'
+    strcpy(processed, text);
+    padded_len = len;
+    while (padded_len % 3 != 0) {
+        processed[padded_len++] = 'X';
+    }
+    processed[padded_len] = '\0';
+    printf("Processed Text: %s\n", processed);
+
+    // Encrypt
+    int cipher_idx = 0;
+    for (int i = 0; i < padded_len; i += 3) {
+        int pt[3], ct[3] = {0, 0, 0};
+
+        // Print block
+        printf("\nBlock: %c%c%c\n", processed[i], processed[i+1], processed[i+2]);
+
+        // Convert letters to numbers
+        for (int j = 0; j < 3; j++) pt[j] = processed[i+j] - 'A';
+
+        // Matrix multiply mod 26
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 3; c++) {
+                ct[r] += key[r][c] * pt[c];
+            }
+            ct[r] %= 26;
+        }
+
+        printf("Numeric: [%d, %d, %d]\n", ct[0], ct[1], ct[2]);
+
+        for (int j = 0; j < 3; j++) {
+            cipher[cipher_idx++] = ct[j] + 'A';
+        }
+    }
+    cipher[cipher_idx] = '\0';
+
+    printf("\nFinal Cipher Text: %s\n", cipher);
+    return 0;
 }
 ```
 
 ## OUTPUT
-<img width="411" height="172" alt="image" src="https://github.com/user-attachments/assets/e741c126-7573-46a5-94a0-231beb8ff27d" />
+<img width="543" height="695" alt="image" src="https://github.com/user-attachments/assets/4b626f97-33fa-4937-9c0b-a4f020288fdd" />
 
-## RESULT
 The program is executed successfully
 
-## RESULT
-The program is executed successfully
